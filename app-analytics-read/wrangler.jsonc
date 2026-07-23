@@ -1,0 +1,17 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "app-analytics-read",
+	"main": "src/index.js",
+	"compatibility_date": "2026-07-23",
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "app_logs_db",
+			"database_name": "app-logs-db",
+			"database_id": "01428d6b-d0d6-43bd-b1c6-d7563d19f617",
+			"remote": true
+		}
+	]
+}

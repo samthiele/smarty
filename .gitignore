@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+.DS_Store
+.wrangler
+*.log
+npm-debug.log*
+
+# Ingest worker — keep local / deploy via Wrangler only
+app-analytics/

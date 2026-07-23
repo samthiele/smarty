@@ -1,0 +1,4 @@
+-- Optional migration: enable date-range filtering in the viewer.
+-- WARNING: drops and recreates app_logs; all existing rows are deleted.
+-- Run from app-analytics:
+-- npx wrangler d1 execute app-logs-db --remote --file=migrations/0002_add_created_at.sql
