@@ -133,10 +133,30 @@ async function handleLogs(searchParams) {
   const where = buildWhereClause({ app, from, to });
 
   const rows = await runD1Query(
-    `SELECT id, app_name, country, created_at, page_url FROM app_logs ${where} ORDER BY id DESC LIMIT ${limit};`
+    `SELECT
+      app_name,
+      country,
+      date(created_at) AS log_date,
+      page_url,
+      referrer_url,
+      COUNT(*) AS count
+     FROM app_logs
+     ${where}
+     GROUP BY app_name, country, date(created_at), page_url, referrer_url
+     ORDER BY MAX(created_at) DESC
+     LIMIT ${limit};`
   );
 
-  return { rows };
+  return {
+    rows: rows.map((row) => ({
+      app_name: row.app_name,
+      country: row.country,
+      log_date: row.log_date,
+      page_url: row.page_url,
+      referrer_url: row.referrer_url,
+      count: Number(row.count),
+    })),
+  };
 }
 
 async function handleStats(searchParams) {

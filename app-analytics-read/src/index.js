@@ -116,22 +116,40 @@ function buildFilter(searchParams, hasCreatedAt) {
 async function handleLogs(db, searchParams, schema) {
 	const limit = sanitizeLimit(searchParams.get("limit"), 100);
 	const { where, binds } = buildFilter(searchParams, schema.hasCreatedAt);
-	const columns = schema.hasCreatedAt
-		? "id, app_name, country, created_at, page_url"
-		: "id, app_name, country, page_url";
+	const dateExpr = schema.hasCreatedAt ? "date(created_at)" : "''";
+	const groupBy = schema.hasCreatedAt
+		? "app_name, country, date(created_at), page_url, referrer_url"
+		: "app_name, country, page_url, referrer_url";
+	const orderBy = schema.hasCreatedAt ? "MAX(created_at) DESC" : "count DESC";
 
 	const result = await db
 		.prepare(
-			`SELECT ${columns}
+			`SELECT
+				app_name,
+				country,
+				${dateExpr} AS log_date,
+				page_url,
+				referrer_url,
+				COUNT(*) AS count
 			 FROM app_logs
 			 ${where}
-			 ORDER BY id DESC
+			 GROUP BY ${groupBy}
+			 ORDER BY ${orderBy}
 			 LIMIT ?`
 		)
 		.bind(...binds, limit)
 		.all();
 
-	return { rows: result.results ?? [] };
+	return {
+		rows: (result.results ?? []).map((row) => ({
+			app_name: row.app_name,
+			country: row.country,
+			log_date: row.log_date || null,
+			page_url: row.page_url,
+			referrer_url: row.referrer_url,
+			count: Number(row.count),
+		})),
+	};
 }
 
 async function handleStats(db, searchParams, schema) {

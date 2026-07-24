@@ -66,7 +66,6 @@ export default function App() {
           <SmartyLogo size={44} />
           <div>
             <h1>Smarty</h1>
-            <p className="app-tagline">Who is using my apps and where.</p>
           </div>
         </div>
       </header>
@@ -100,7 +99,7 @@ export default function App() {
       </section>
 
       <section className="panel">
-        <h2>Recent entries</h2>
+        <h2>Hits</h2>
         <LogTable rows={rows} />
       </section>
     </div>

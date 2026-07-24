@@ -47,12 +47,6 @@ select {
   color: transparent;
 }
 
-.app-tagline {
-  margin: 4px 0 0;
-  color: #64748b;
-  font-style: italic;
-}
-
 .smarty-logo {
   flex-shrink: 0;
   filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.18));
@@ -143,6 +137,25 @@ th {
   color: #64748b;
 }
 
+.sortable-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.sortable-header:hover {
+  color: #2563eb;
+}
+
 .map-wrap {
   width: 100%;
   height: 420px;
@@ -227,4 +240,11 @@ th {
   max-width: min(420px, calc(100vw - 24px));
   word-break: break-all;
   line-height: 1.4;
+}
+
+.referrer-cell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
