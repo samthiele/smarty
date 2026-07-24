@@ -6,23 +6,15 @@ import {
   Geography,
   ZoomableGroup,
 } from "react-simple-maps";
+import {
+  normalizeCountryCode,
+  resolveGeographyIso2,
+} from "../data/countryCodes.js";
 
 const GEO_URL =
-  "https://cdn.jsdelivr.net/gh/datasets/geo-countries@master/data/countries.geojson";
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 const DEFAULT_POSITION = { coordinates: [0, 20], zoom: 1 };
-
-function normalizeCountryCode(code) {
-  return String(code || "").toUpperCase();
-}
-
-function geographyIso2(geo) {
-  return normalizeCountryCode(
-    geo.properties?.["ISO3166-1-Alpha-2"] ??
-      geo.properties?.ISO_A2 ??
-      geo.properties?.iso_a2
-  );
-}
 
 export default function WorldMap({ byCountry, total }) {
   const [tooltip, setTooltip] = useState(null);
@@ -82,9 +74,12 @@ export default function WorldMap({ byCountry, total }) {
             <Geographies geography={GEO_URL}>
               {({ geographies }) =>
                 geographies.map((geo) => {
-                  const iso2 = geographyIso2(geo);
-                  const count = Number(normalizedCounts[iso2] || 0);
-                  const name = geo.properties?.name || iso2;
+                  const iso2 = resolveGeographyIso2(geo);
+                  const count = iso2 ? Number(normalizedCounts[iso2] || 0) : 0;
+                  const name = geo.properties?.name || iso2 || "Unknown";
+                  const label = iso2
+                    ? `${name} (${iso2}): ${count}`
+                    : `${name}: ${count}`;
 
                   return (
                     <Geography
@@ -102,14 +97,14 @@ export default function WorldMap({ byCountry, total }) {
                         setTooltip({
                           x: event.clientX,
                           y: event.clientY,
-                          label: `${name} (${iso2}): ${count}`,
+                          label,
                         });
                       }}
                       onMouseMove={(event) => {
                         setTooltip({
                           x: event.clientX,
                           y: event.clientY,
-                          label: `${name} (${iso2}): ${count}`,
+                          label,
                         });
                       }}
                       onMouseLeave={() => setTooltip(null)}
