@@ -241,6 +241,33 @@ async function handleTopUrls(searchParams) {
   };
 }
 
+async function handleTopReferrers(searchParams) {
+  const app = sanitizeAppName(searchParams.get("app"));
+  const from = sanitizeDate(searchParams.get("from"));
+  const to = sanitizeDate(searchParams.get("to"));
+  const topN = sanitizeTopN(searchParams.get("top"), 10);
+  const where = buildWhereClause({ app, from, to });
+  const referrerFilter = where
+    ? `${where} AND referrer_url IS NOT NULL AND referrer_url != ''`
+    : "WHERE referrer_url IS NOT NULL AND referrer_url != ''";
+
+  const rows = await runD1Query(
+    `SELECT referrer_url, COUNT(*) AS count
+     FROM app_logs
+     ${referrerFilter}
+     GROUP BY referrer_url
+     ORDER BY count DESC
+     LIMIT ${topN};`
+  );
+
+  return {
+    rows: rows.map((row) => ({
+      referrer_url: row.referrer_url,
+      count: Number(row.count),
+    })),
+  };
+}
+
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -282,6 +309,11 @@ const server = createServer(async (req, res) => {
 
     if (url.pathname === "/api/top-urls") {
       sendJson(res, 200, await handleTopUrls(url.searchParams));
+      return;
+    }
+
+    if (url.pathname === "/api/top-referrers") {
+      sendJson(res, 200, await handleTopReferrers(url.searchParams));
       return;
     }
 

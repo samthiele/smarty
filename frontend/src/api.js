@@ -44,6 +44,10 @@ export function getTopUrls(filters, topN = 10) {
   return fetchJson(`/api/top-urls${buildQuery({ ...filters, top: topN })}`);
 }
 
+export function getTopReferrers(filters, topN = 10) {
+  return fetchJson(`/api/top-referrers${buildQuery({ ...filters, top: topN })}`);
+}
+
 export function getApps() {
   return fetchJson("/api/apps");
 }

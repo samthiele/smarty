@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { getApps, getLogs, getStats, getSummary, getTopUrls } from "./api.js";
+import {
+  getApps,
+  getLogs,
+  getStats,
+  getSummary,
+  getTopReferrers,
+  getTopUrls,
+} from "./api.js";
 import Filters, {
   appFilterLabel,
   createInitialFilters,
@@ -8,12 +15,13 @@ import Filters, {
 } from "./components/Filters.jsx";
 import LogTable from "./components/LogTable.jsx";
 import Summary from "./components/Summary.jsx";
+import TopReferrers from "./components/TopReferrers.jsx";
 import TopUrls from "./components/TopUrls.jsx";
 import SmartyLogo from "./components/SmartyLogo.jsx";
 import WorldMap from "./components/WorldMap.jsx";
 
 const EMPTY_SUMMARY = { week: 0, month: 0, year: 0, allTime: 0 };
-const TOP_URL_COUNT = 10;
+const TOP_LIST_COUNT = 10;
 
 export default function App() {
   const [filters, setFilters] = useState(createInitialFilters);
@@ -22,6 +30,7 @@ export default function App() {
   const [stats, setStats] = useState({ byCountry: {}, total: 0 });
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
   const [topUrls, setTopUrls] = useState([]);
+  const [topReferrers, setTopReferrers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -32,18 +41,25 @@ export default function App() {
     try {
       const query = toQueryFilters(nextFilters);
       const appQuery = toAppFilter(nextFilters);
-      const [logsResponse, statsResponse, summaryResponse, topUrlsResponse] =
-        await Promise.all([
+      const [
+        logsResponse,
+        statsResponse,
+        summaryResponse,
+        topUrlsResponse,
+        topReferrersResponse,
+      ] = await Promise.all([
         getLogs(query),
         getStats(query),
         getSummary(appQuery),
-        getTopUrls(query, TOP_URL_COUNT),
+        getTopUrls(query, TOP_LIST_COUNT),
+        getTopReferrers(query, TOP_LIST_COUNT),
       ]);
 
       setRows(logsResponse.rows);
       setStats(statsResponse);
       setSummary(summaryResponse);
       setTopUrls(topUrlsResponse.rows);
+      setTopReferrers(topReferrersResponse.rows);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -95,7 +111,12 @@ export default function App() {
 
       <section className="panel">
         <h2>Top URLs</h2>
-        <TopUrls rows={topUrls} topN={TOP_URL_COUNT} />
+        <TopUrls rows={topUrls} topN={TOP_LIST_COUNT} />
+      </section>
+
+      <section className="panel">
+        <h2>Top Referrers</h2>
+        <TopReferrers rows={topReferrers} topN={TOP_LIST_COUNT} />
       </section>
 
       <section className="panel">

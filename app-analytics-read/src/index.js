@@ -253,6 +253,33 @@ async function handleTopUrls(db, searchParams, schema) {
 	};
 }
 
+async function handleTopReferrers(db, searchParams, schema) {
+	const topN = sanitizeTopN(searchParams.get("top"), 10);
+	const { where, binds } = buildFilter(searchParams, schema.hasCreatedAt);
+	const referrerFilter = where
+		? `${where} AND referrer_url IS NOT NULL AND referrer_url != ''`
+		: "WHERE referrer_url IS NOT NULL AND referrer_url != ''";
+
+	const result = await db
+		.prepare(
+			`SELECT referrer_url, COUNT(*) AS count
+			 FROM app_logs
+			 ${referrerFilter}
+			 GROUP BY referrer_url
+			 ORDER BY count DESC
+			 LIMIT ?`
+		)
+		.bind(...binds, topN)
+		.all();
+
+	return {
+		rows: (result.results ?? []).map((row) => ({
+			referrer_url: row.referrer_url,
+			count: Number(row.count),
+		})),
+	};
+}
+
 export default {
 	async fetch(request, env) {
 		if (request.method === "OPTIONS") {
@@ -272,7 +299,14 @@ export default {
 				return jsonResponse({
 					ok: true,
 					worker: "app-analytics-read",
-					endpoints: ["/api/logs", "/api/stats", "/api/summary", "/api/top-urls", "/api/apps"],
+					endpoints: [
+						"/api/logs",
+						"/api/stats",
+						"/api/summary",
+						"/api/top-urls",
+						"/api/top-referrers",
+						"/api/apps",
+					],
 					dateFilteringAvailable: schema.hasCreatedAt,
 				});
 			}
@@ -291,6 +325,10 @@ export default {
 
 			if (url.pathname === "/api/top-urls") {
 				return jsonResponse(await handleTopUrls(env.app_logs_db, url.searchParams, schema));
+			}
+
+			if (url.pathname === "/api/top-referrers") {
+				return jsonResponse(await handleTopReferrers(env.app_logs_db, url.searchParams, schema));
 			}
 
 			if (url.pathname === "/api/apps") {
