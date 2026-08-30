@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { canonicalAppName } from "../appGroups.js";
 
 const COLUMNS = [
   { key: "count", label: "Count" },
@@ -127,7 +128,7 @@ export default function LogTable({ rows }) {
                   }
                   onMouseLeave={row.page_url ? () => setTooltip(null) : undefined}
                 >
-                  {row.app_name}
+                  {canonicalAppName(row.app_name)}
                 </td>
                 <td>{row.country}</td>
                 <td>{row.log_date ?? "—"}</td>

@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  getApps,
-  getLogs,
-  getStats,
-  getSummary,
-  getTopReferrers,
-  getTopUrls,
-} from "./api.js";
+import { groupAppsForFilter } from "./appGroups.js";
+import { getApps } from "./api.js";
 import Filters, {
   appFilterLabel,
   createInitialFilters,
-  toAppFilter,
-  toQueryFilters,
 } from "./components/Filters.jsx";
+import { appFromHash, setAppHash } from "./hashFilter.js";
+import { loadDashboardData } from "./loadDashboardData.js";
 import LogTable from "./components/LogTable.jsx";
 import Summary from "./components/Summary.jsx";
 import TopReferrers from "./components/TopReferrers.jsx";
@@ -24,7 +18,10 @@ const EMPTY_SUMMARY = { week: 0, month: 0, year: 0, allTime: 0 };
 const TOP_LIST_COUNT = 10;
 
 export default function App() {
-  const [filters, setFilters] = useState(createInitialFilters);
+  const [filters, setFilters] = useState(() => ({
+    ...createInitialFilters(),
+    app: appFromHash(),
+  }));
   const [apps, setApps] = useState([]);
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({ byCountry: {}, total: 0 });
@@ -39,27 +36,13 @@ export default function App() {
     setError("");
 
     try {
-      const query = toQueryFilters(nextFilters);
-      const appQuery = toAppFilter(nextFilters);
-      const [
-        logsResponse,
-        statsResponse,
-        summaryResponse,
-        topUrlsResponse,
-        topReferrersResponse,
-      ] = await Promise.all([
-        getLogs(query),
-        getStats(query),
-        getSummary(appQuery),
-        getTopUrls(query, TOP_LIST_COUNT),
-        getTopReferrers(query, TOP_LIST_COUNT),
-      ]);
+      const data = await loadDashboardData(nextFilters, TOP_LIST_COUNT);
 
-      setRows(logsResponse.rows);
-      setStats(statsResponse);
-      setSummary(summaryResponse);
-      setTopUrls(topUrlsResponse.rows);
-      setTopReferrers(topReferrersResponse.rows);
+      setRows(data.rows);
+      setStats(data.stats);
+      setSummary(data.summary);
+      setTopUrls(data.topUrls);
+      setTopReferrers(data.topReferrers);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -69,11 +52,38 @@ export default function App() {
 
   useEffect(() => {
     getApps()
-      .then((response) => setApps(response.apps))
+      .then((response) => setApps(groupAppsForFilter(response.apps)))
       .catch((err) => setError(err.message));
 
     loadData(filters);
   }, [loadData]);
+
+  useEffect(() => {
+    function handleHashChange() {
+      const app = appFromHash();
+      setFilters((current) => {
+        if (current.app === app) {
+          return current;
+        }
+        const next = { ...current, app };
+        loadData(next);
+        return next;
+      });
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [loadData]);
+
+  function handleFilterChange(patch) {
+    setFilters((current) => {
+      const next = { ...current, ...patch };
+      if ("app" in patch) {
+        setAppHash(next.app);
+      }
+      return next;
+    });
+  }
 
   return (
     <div className="app">
@@ -92,7 +102,7 @@ export default function App() {
           apps={apps}
           filters={filters}
           loading={loading}
-          onChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+          onChange={handleFilterChange}
           onSubmit={() => loadData(filters)}
         />
       </section>
